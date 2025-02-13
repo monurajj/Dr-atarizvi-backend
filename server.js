@@ -3,47 +3,79 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
+const morgan = require("morgan");
 
-// Load environment variables at the top
 dotenv.config();
 
-console.log("MongoDB URI:", process.env.MONGODB_URI); // Debugging line
+console.log("🔍 MongoDB URI:", process.env.MONGODB_URI);
+console.log("🚀 Server Port:", process.env.PORT || 5001);
 
-// Check if MONGODB_URI is defined
 if (!process.env.MONGODB_URI) {
-  console.error("❌ MONGODB_URI is not defined in the .env file!");
-  process.exit(1); // Exit the process
+  console.error("❌ MONGODB_URI is missing! Check .env file.");
+  process.exit(1);
 }
 
-// Connect to MongoDB
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
   .then(() => console.log("✅ Connected to MongoDB"))
-  .catch((err) => console.error("❌ Failed to connect to MongoDB:", err));
+  .catch((err) => {
+    console.error("❌ MongoDB Connection Failed:", err);
+    process.exit(1);
+  });
 
-// Create an Express app
 const app = express();
 
-// Middleware
-app.use(cors()); // Enable CORS
-app.use(bodyParser.json()); // Parse JSON request bodies
+app.use(cors());
+app.use(bodyParser.json());
+app.use(morgan("dev"));
 
-// Define a basic route
 app.get("/", (req, res) => {
-  res.send("Welcome to Dr. Atarizvi Clinic Backend!");
+  res.send("🏥 Welcome to Dr. Atarizvi Clinic Backend!");
 });
 
-// Routes
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "OK", message: "Server is healthy" });
+});
+
 const appointmentRoutes = require("./routes/appointmentRoutes");
-app.use("/api/appointments", appointmentRoutes); // Use the appointment routes
+app.use("/api/appointments", appointmentRoutes);
 
-// Set the port
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+  console.error("❌ Internal Server Error:", err.stack);
+  res.status(500).json({ message: "Something went wrong!" });
+});
+
 const PORT = process.env.PORT || 5001;
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
+const shutdown = async () => {
+  try {
+    console.log("🛑 Shutting down server...");
+    server.close(async () => {
+      console.log("✅ Server closed.");
+      await mongoose.connection.close();
+      console.log("✅ MongoDB connection closed.");
+      process.exit(0);
+    });
+  } catch (error) {
+    console.error("❌ Error during shutdown:", error);
+    process.exit(1);
+  }
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+process.on("uncaughtException", (err) => {
+  console.error("❌ Uncaught Exception:", err);
+  shutdown();
+});
+process.on("unhandledRejection", (err) => {
+  console.error("❌ Unhandled Rejection:", err);
+  shutdown();
 });
