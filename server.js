@@ -10,6 +10,39 @@ dotenv.config();
 console.log("🔍 MongoDB URI:", process.env.MONGODB_URI);
 console.log("🚀 Server Port:", process.env.PORT || 5001);
 
+// Add this before the mongoose.connect call
+const connectWithRetry = async () => {
+  const options = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    heartbeatFrequencyMS: 2000,     // Check server health more frequently
+  };
+
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, options);
+    console.log("✅ Connected to MongoDB");
+  } catch (err) {
+    console.error("❌ MongoDB Connection Error:", {
+      name: err.name,
+      message: err.message,
+      code: err.code,
+      serverHost: err.serverHost,
+    });
+    
+    // Log the connection string with credentials removed
+    const sanitizedUri = process.env.MONGODB_URI.replace(
+      /(mongodb\+srv:\/\/)([^:]+):([^@]+)@/,
+      '$1[username]:[password]@'
+    );
+    console.log("🔍 Attempting to connect to:", sanitizedUri);
+    
+    console.log("⏳ Retrying connection in 5 seconds...");
+    setTimeout(connectWithRetry, 5000);
+  }
+};
+
+
 if (!process.env.MONGODB_URI) {
   console.error("❌ MONGODB_URI is missing! Check .env file.");
   process.exit(1);
@@ -81,6 +114,9 @@ const shutdown = async () => {
     process.exit(1);
   }
 };
+
+
+connectWithRetry();
 
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
