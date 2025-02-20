@@ -14,7 +14,7 @@ const {
 const {
   authMiddleware,
   adminMiddleware,
-} = require("../middleware/authMiddleware");
+} = require("../MiddleWare/authMiddleware");
 
 // Debugging the imports to ensure proper function
 console.log("createAppointment:", createAppointment);
