@@ -9,6 +9,7 @@ const {
 } = require("../controllers/adminController");
 const { auth, admin } = require("../MiddleWare/auth");
 
+
 // Protected admin routes - requires both auth and admin middleware
 router.get("/users", auth, admin, getUsers);
 router.get("/users/:id", auth, admin, getUserById);

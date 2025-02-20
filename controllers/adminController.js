@@ -31,7 +31,11 @@ const updateUser = async (req, res) => {
   try {
     const { name, email, role, isActive } = req.body;
 
-    // Don't update password here - that should be a separate operation with validation
+    // Ensure only admins can update user details
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+
     const user = await User.findByIdAndUpdate(
       req.params.id,
       { name, email, role, isActive },
@@ -43,11 +47,11 @@ const updateUser = async (req, res) => {
     }
 
     res.status(200).json({
-      message: "✅ User updated successfully",
+      message: "User updated successfully",
       user,
     });
   } catch (err) {
-    console.error("❌ Error updating user:", err);
+    console.error("Error updating user:", err);
     res.status(500).json({ message: "Failed to update user" });
   }
 };
