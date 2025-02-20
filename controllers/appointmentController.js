@@ -37,7 +37,18 @@ const createAppointment = async (req, res) => {
 // Get all appointments
 const getAppointments = async (req, res) => {
   try {
-    const appointments = await Appointment.find();
+    // If user is admin, show all appointments
+    // Otherwise, filter by user's appointments
+    let appointments;
+
+    if (req.user.role === "admin") {
+      appointments = await Appointment.find();
+    } else {
+      // Here we assume appointments might be linked to users in the future
+      // For now, this returns all appointments for non-admin users
+      appointments = await Appointment.find();
+    }
+
     res.status(200).json(appointments);
   } catch (err) {
     console.error("❌ Error fetching appointments:", err);

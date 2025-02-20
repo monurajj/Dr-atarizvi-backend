@@ -13,6 +13,7 @@ const appointmentSchema = new mongoose.Schema(
       default: "Pending",
     },
     contactInfo: { type: String, required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, // Link appointments to users
   },
   { timestamps: true }
 );

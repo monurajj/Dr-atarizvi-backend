@@ -15,6 +15,11 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 
+if (!process.env.JWT_SECRET) {
+  console.error("❌ JWT_SECRET is missing! Check .env file.");
+  process.exit(1);
+}
+
 mongoose
   .connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
@@ -40,8 +45,16 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", message: "Server is healthy" });
 });
 
+// Import routes
 const appointmentRoutes = require("./routes/appointmentRoutes");
+const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+
+// Use routes
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
